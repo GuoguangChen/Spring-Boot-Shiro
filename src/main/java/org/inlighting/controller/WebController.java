@@ -6,10 +6,12 @@ import org.apache.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.*;
 import org.apache.shiro.subject.Subject;
+import org.inlighting.Entities.UserInfo;
 import org.inlighting.bean.ResponseBean;
 import org.inlighting.database.UserService;
 import org.inlighting.database.UserBean;
 import org.inlighting.exception.UnauthorizedException;
+import org.inlighting.service.UserService1;
 import org.inlighting.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,10 +23,10 @@ public class WebController {
 
     private static final Logger LOGGER = LogManager.getLogger(WebController.class);
 
-    private UserService userService;
+    private UserService1 userService;
 
     @Autowired
-    public void setService(UserService userService) {
+    public void setService(UserService1 userService) {
         this.userService = userService;
     }
 
@@ -32,7 +34,8 @@ public class WebController {
     public ResponseBean login(@RequestParam("username") String username,
                               @RequestParam("password") String password) {
         log.info("----------> Login");
-        UserBean userBean = userService.getUser(username);
+        UserInfo userBean = userService.findByUsername(username);
+        log.info("userInfo", userBean);
         if (userBean.getPassword().equals(password)) {
             return new ResponseBean(200, "Login success", JWTUtil.sign(username, password));
         } else {
@@ -66,7 +69,7 @@ public class WebController {
     }
 
     @GetMapping("/require_permission")
-    @RequiresPermissions(logical = Logical.AND, value = {"view", "edit"})
+    @RequiresPermissions(logical = Logical.AND, value = {"userInfo:view", "userInfo:add"})
     public ResponseBean requirePermission() {
         log.info("----------> require_permission");
         return new ResponseBean(200, "You are visiting permission require edit,view", null);

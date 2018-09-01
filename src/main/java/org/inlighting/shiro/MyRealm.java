@@ -1,5 +1,6 @@
 package org.inlighting.shiro;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.shiro.authc.*;
@@ -7,8 +8,12 @@ import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.inlighting.Entities.SysPermission;
+import org.inlighting.Entities.SysRole;
+import org.inlighting.Entities.UserInfo;
 import org.inlighting.database.UserService;
 import org.inlighting.database.UserBean;
+import org.inlighting.service.UserService1;
 import org.inlighting.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,15 +22,16 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+@Slf4j
 @Service
 public class MyRealm extends AuthorizingRealm {
 
     private static final Logger LOGGER = LogManager.getLogger(MyRealm.class);
 
-    private UserService userService;
+    private UserService1 userService;
 
     @Autowired
-    public void setUserService(UserService userService) {
+    public void setUserService(UserService1 userService) {
         this.userService = userService;
     }
 
@@ -42,12 +48,19 @@ public class MyRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
+        log.info("----------> doGetAuthorizationInfo");
         String username = JWTUtil.getUsername(principals.toString());
-        UserBean user = userService.getUser(username);
+        UserInfo user = userService.findByUsername(username);
         SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo();
-        simpleAuthorizationInfo.addRole(user.getRole());
+        for(SysRole role:user.getRoleList()){
+            simpleAuthorizationInfo.addRole(role.getRole());
+            for(SysPermission p:role.getPermissions()){
+                simpleAuthorizationInfo.addStringPermission(p.getPermission());
+            }
+        }
+        /*simpleAuthorizationInfo.addRole(user.getRole());
         Set<String> permission = new HashSet<>(Arrays.asList(user.getPermission().split(",")));
-        simpleAuthorizationInfo.addStringPermissions(permission);
+        simpleAuthorizationInfo.addStringPermissions(permission);*/
         return simpleAuthorizationInfo;
     }
 
@@ -56,6 +69,7 @@ public class MyRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken auth) throws AuthenticationException {
+        log.info("----------> doGetAuthenticationInfo");
         String token = (String) auth.getCredentials();
         // 解密获得username，用于和数据库进行对比
         String username = JWTUtil.getUsername(token);
@@ -63,12 +77,12 @@ public class MyRealm extends AuthorizingRealm {
             throw new AuthenticationException("token invalid");
         }
 
-        UserBean userBean = userService.getUser(username);
-        if (userBean == null) {
+        UserInfo userInfo = userService.findByUsername(username);
+        if (userInfo == null) {
             throw new AuthenticationException("User didn't existed!");
         }
 
-        if (! JWTUtil.verify(token, username, userBean.getPassword())) {
+        if (! JWTUtil.verify(token, username, userInfo.getPassword())) {
             throw new AuthenticationException("Username or password error");
         }
 

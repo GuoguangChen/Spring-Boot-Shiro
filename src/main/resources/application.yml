@@ -9,7 +9,7 @@ spring:
 
     jpa:
       database: mysql
-      show-sql: true
+      #show-sql: true
       hibernate:
         ddl-auto: update
         naming:
