@@ -1,5 +1,6 @@
 package org.inlighting.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 public class WebController {
 
@@ -29,6 +31,7 @@ public class WebController {
     @PostMapping("/login")
     public ResponseBean login(@RequestParam("username") String username,
                               @RequestParam("password") String password) {
+        log.info("----------> Login");
         UserBean userBean = userService.getUser(username);
         if (userBean.getPassword().equals(password)) {
             return new ResponseBean(200, "Login success", JWTUtil.sign(username, password));
@@ -39,6 +42,7 @@ public class WebController {
 
     @GetMapping("/article")
     public ResponseBean article() {
+        log.info("----------> article");
         Subject subject = SecurityUtils.getSubject();
         if (subject.isAuthenticated()) {
             return new ResponseBean(200, "You are already logged in", null);
@@ -50,24 +54,28 @@ public class WebController {
     @GetMapping("/require_auth")
     @RequiresAuthentication
     public ResponseBean requireAuth() {
+        log.info("----------> require_auth");
         return new ResponseBean(200, "You are authenticated", null);
     }
 
     @GetMapping("/require_role")
     @RequiresRoles("admin")
     public ResponseBean requireRole() {
+        log.info("----------> require_role");
         return new ResponseBean(200, "You are visiting require_role", null);
     }
 
     @GetMapping("/require_permission")
     @RequiresPermissions(logical = Logical.AND, value = {"view", "edit"})
     public ResponseBean requirePermission() {
+        log.info("----------> require_permission");
         return new ResponseBean(200, "You are visiting permission require edit,view", null);
     }
 
     @RequestMapping(path = "/401")
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ResponseBean unauthorized() {
+        log.info("----------> 401");
         return new ResponseBean(401, "Unauthorized", null);
     }
 }
