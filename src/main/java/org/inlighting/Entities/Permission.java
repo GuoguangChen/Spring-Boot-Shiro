@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Entity
-public class SysPermission implements Serializable {
+public class Permission implements Serializable {
     @Id
     @GeneratedValue
     private Integer id;//主键.
@@ -19,7 +19,7 @@ public class SysPermission implements Serializable {
     private Boolean available = Boolean.FALSE;
     @ManyToMany
     @JoinTable(name="SysRolePermission",joinColumns={@JoinColumn(name="permissionId")},inverseJoinColumns={@JoinColumn(name="roleId")})
-    private List<SysRole> roles;
+    private List<Role> roles;
 
     public Integer getId() {
         return id;
@@ -85,11 +85,11 @@ public class SysPermission implements Serializable {
         this.available = available;
     }
 
-    public List<SysRole> getRoles() {
+    public List<Role> getRoles() {
         return roles;
     }
 
-    public void setRoles(List<SysRole> roles) {
+    public void setRoles(List<Role> roles) {
         this.roles = roles;
     }
 }

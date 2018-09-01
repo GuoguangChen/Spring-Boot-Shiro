@@ -8,19 +8,13 @@ import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
-import org.inlighting.Entities.SysPermission;
-import org.inlighting.Entities.SysRole;
-import org.inlighting.Entities.UserInfo;
-import org.inlighting.database.UserService;
-import org.inlighting.database.UserBean;
-import org.inlighting.service.UserService1;
+import org.inlighting.Entities.Permission;
+import org.inlighting.Entities.Role;
+import org.inlighting.Entities.User;
+import org.inlighting.service.UserService;
 import org.inlighting.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -28,10 +22,10 @@ public class MyRealm extends AuthorizingRealm {
 
     private static final Logger LOGGER = LogManager.getLogger(MyRealm.class);
 
-    private UserService1 userService;
+    private UserService userService;
 
     @Autowired
-    public void setUserService(UserService1 userService) {
+    public void setUserService(UserService userService) {
         this.userService = userService;
     }
 
@@ -50,11 +44,11 @@ public class MyRealm extends AuthorizingRealm {
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
         log.info("----------> doGetAuthorizationInfo");
         String username = JWTUtil.getUsername(principals.toString());
-        UserInfo user = userService.findByUsername(username);
+        User user = userService.findByUsername(username);
         SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo();
-        for(SysRole role:user.getRoleList()){
+        for(Role role:user.getRoleList()){
             simpleAuthorizationInfo.addRole(role.getRole());
-            for(SysPermission p:role.getPermissions()){
+            for(Permission p:role.getPermissions()){
                 simpleAuthorizationInfo.addStringPermission(p.getPermission());
             }
         }
@@ -77,12 +71,12 @@ public class MyRealm extends AuthorizingRealm {
             throw new AuthenticationException("token invalid");
         }
 
-        UserInfo userInfo = userService.findByUsername(username);
-        if (userInfo == null) {
+        User user = userService.findByUsername(username);
+        if (user == null) {
             throw new AuthenticationException("User didn't existed!");
         }
 
-        if (! JWTUtil.verify(token, username, userInfo.getPassword())) {
+        if (! JWTUtil.verify(token, username, user.getPassword())) {
             throw new AuthenticationException("Username or password error");
         }
 
