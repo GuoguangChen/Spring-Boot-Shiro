@@ -30,11 +30,12 @@ public class WebController {
 
     @PostMapping("/login")
     public ResponseBean login(@RequestParam("username") String username,
-                              @RequestParam("password") String password) {
+                              @RequestParam("password") String password,
+                              @RequestParam("appid") String appid) {
         log.info("----------> Login");
         User user = userService.findByUsername(username);
         if (user.getPassword().equals(password)) {
-            return new ResponseBean(200, "Login success", JWTUtil.sign(username, password));
+            return new ResponseBean(200, "Login success", JWTUtil.sign(username, password, appid));
         } else {
             throw new UnauthorizedException();
         }
@@ -70,6 +71,18 @@ public class WebController {
     public ResponseBean requirePermission() {
         log.info("----------> require_permission");
         return new ResponseBean(200, "You are visiting permission require edit,view", null);
+    }
+
+    @GetMapping("/devices")
+    @RequiresRoles("admin")
+    public ResponseBean requireDevices() {
+        log.info("----------> require_devices");
+        Subject subject = SecurityUtils.getSubject();
+        String username = JWTUtil.getUsername(subject.getPrincipal().toString());
+        log.info("username is: {}", username);
+        String appid = JWTUtil.getAppid(subject.getPrincipal().toString());
+        log.info("appid is: {}", appid);
+        return new ResponseBean(200, "You are visiting require_role admin", null);
     }
 
     @RequestMapping(path = "/401")
